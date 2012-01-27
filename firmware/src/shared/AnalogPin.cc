@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+ * Copyright 2010 by Adam Mayer   <adam@makerbot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -25,7 +25,9 @@ volatile int16_t* adc_destination; //< Address to write the sampled data to
 
 volatile bool* adc_finished; //< Flag to set once the data is sampled
 
-#if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328__)
+#if defined (__AVR_ATmega168__)    \
+    || defined (__AVR_ATmega328__) \
+    || defined (__AVR_ATmega328P__)
 
     // We are using the AVcc as our reference.  There's a 100nF cap
     // to ground on the AREF pin.

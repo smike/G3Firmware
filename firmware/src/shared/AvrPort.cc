@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+ * Copyright 2010 by Adam Mayer   <adam@makerbot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -31,6 +31,7 @@
 // We support three platforms: Atmega168 (1 UART), Atmega644, and Atmega1280/2560
 #if defined (__AVR_ATmega168__)     \
     || defined (__AVR_ATmega328__)  \
+    || defined (__AVR_ATmega328P__) \
     || defined (__AVR_ATmega644P__) \
     || defined (__AVR_ATmega1280__) \
     || defined (__AVR_ATmega2560__)
@@ -75,8 +76,8 @@ void AvrPort::setPin(uint8_t pin_index, bool on) {
 
 
 #if defined(__AVR_ATmega644P__) || \
-	defined(__AVR_ATmega1280__) || \
-	defined(__AVR_ATmega2560__)
+  defined(__AVR_ATmega1280__) || \
+  defined(__AVR_ATmega2560__)
 AvrPort PortA(0x20);
 #endif // __AVR_ATmega644P__
 AvrPort PortB(0x23);

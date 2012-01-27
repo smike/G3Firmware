@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+ * Copyright 2010 by Adam Mayer   <adam@makerbot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,6 +22,7 @@
 
 #if defined (__AVR_ATmega168__) \
     || defined (__AVR_ATmega328__) \
+    || defined (__AVR_ATmega328P__) \
     || defined (__AVR_ATmega644P__)
 
     typedef uint8_t port_base_t;
@@ -44,7 +45,7 @@
 /// \ingroup HardwareLibraries
 class AvrPort {
 private:
-	port_base_t port_base;
+  port_base_t port_base;
 public:
         AvrPort();
         AvrPort(port_base_t port_base_in);

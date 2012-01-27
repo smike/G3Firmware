@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+ * Copyright 2010 by Adam Mayer   <adam@makerbot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,7 @@ volatile uint8_t loopback_bytes = 0;
 // We support three platforms: Atmega168 (1 UART), Atmega644, and Atmega1280/2560
 #if defined (__AVR_ATmega168__)     \
     || defined (__AVR_ATmega328__)  \
+    || defined (__AVR_ATmega328P__)  \
     || defined (__AVR_ATmega644P__) \
     || defined (__AVR_ATmega1280__) \
     || defined (__AVR_ATmega2560__)
@@ -45,7 +46,9 @@ volatile uint8_t loopback_bytes = 0;
     #error UART not implemented on this processor type!
 #endif
 
-#if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328__)
+#if defined (__AVR_ATmega168__) \
+    || defined (__AVR_ATmega328__) \
+    || defined (__AVR_ATmega328P__)
 
     #define UBRR_VALUE 25
     #define UCSR0A_VALUE 0
@@ -110,7 +113,8 @@ UCSR##uart_##B &= ~(_BV(RXCIE##uart_) | _BV(TXCIE##uart_)); \
 
 // TODO: Move these definitions to the board files, where they belong.
 #if defined (__AVR_ATmega168__) \
-    || defined (__AVR_ATmega328__)
+    || defined (__AVR_ATmega328__) \
+    || defined (__AVR_ATmega328P__)
 
     UART UART::hostUART(0, RS485);
 
@@ -151,13 +155,16 @@ void UART::send_byte(char data) {
 
 // Transition to a non-transmitting state. This is only used for RS485 mode.
 inline void listen() {
-//        TX_ENABLE_PIN.setValue(false);
+#if defined(TX_ENABLE_PIN)
     TX_ENABLE_PIN.setValue(false);
+#endif
 }
 
 // Transition to a transmitting state
 inline void speak() {
+#if defined(TX_ENABLE_PIN)
     TX_ENABLE_PIN.setValue(true);
+#endif
 }
 
 UART::UART(uint8_t index, communication_mode mode) :
@@ -196,10 +203,12 @@ void UART::enable(bool enabled) {
 #endif
 
         if (mode_ == RS485) {
+#if defined(TX_ENABLE_PIN) && defined(RX_ENABLE_PIN)
                 // If this is an RS485 pin, set up the RX and TX enable control lines.
                 TX_ENABLE_PIN.setDirection(true);
                 RX_ENABLE_PIN.setDirection(true);
                 RX_ENABLE_PIN.setValue(false);  // Active low
+#endif
                 listen();
 
                 loopback_bytes = 0;
@@ -215,7 +224,9 @@ void UART::reset() {
         }
 }
 
-#if defined (__AVR_ATmega168__) || defined (__AVR_ATmega328__)
+#if defined (__AVR_ATmega168__) \
+    || defined (__AVR_ATmega328__) \
+    || defined (__AVR_ATmega328P__)
 
     // Send and receive interrupts
     ISR(USART_RX_vect)
