@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+ * Copyright 2010 by Adam Mayer   <adam@makerbot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,58 +23,58 @@
 /// The StepperInterface module represents a connection to a single stepper controller.
 /// \ingroup SoftwareLibraries
 class StepperInterface {
+protected:
+  /// Default constructor
+  StepperInterface() {}
+  StepperInterface(const Pin& dir,
+      const Pin& step,
+      const Pin& enable,
+      const Pin& max,
+      const Pin& min,
+      uint16_t eeprom_base_in);
+
+  friend class Motherboard;
+
 private:
-    /// Default constructor
-    StepperInterface() {}
-    StepperInterface(const Pin& dir,
-                    const Pin& step,
-                    const Pin& enable,
-                    const Pin& max,
-                    const Pin& min,
-                    uint16_t eeprom_base_in);
-
-        friend class Motherboard;
-
-private:
-        /// Initialize the pins for the interface
-        /// \param[in] idx Stepper index that this interface refers to (used to look up
-        ///                it's settings in the EEPROM)
-        void init(uint8_t idx);
+  /// Initialize the pins for the interface
+  /// \param[in] idx Stepper index that this interface refers to (used to look up
+  ///                it's settings in the EEPROM)
+  void init(uint8_t idx);
 
 
 
-        Pin dir_pin;                ///< Pin (output) that the direction line is connected to
-        Pin step_pin;               ///< Pin (output) that the step line is connected to
-        Pin enable_pin;             ///< Pin (output) that the enable line is connected to
-        Pin max_pin;                ///< Pin (input) that the maximum endstop is connected to.
-        Pin min_pin;                ///< Pin (input) that the minimum endstop is connected to.
-        bool invert_endstops;       ///< True if endstops input polarity is inverted for
-                                    ///< this axis.
-        bool invert_axis;           ///< True if motions for this axis should be inverted
+  Pin dir_pin;                ///< Pin (output) that the direction line is connected to
+  Pin step_pin;               ///< Pin (output) that the step line is connected to
+  Pin enable_pin;             ///< Pin (output) that the enable line is connected to
+  Pin max_pin;                ///< Pin (input) that the maximum endstop is connected to.
+  Pin min_pin;                ///< Pin (input) that the minimum endstop is connected to.
+  bool invert_endstops;       ///< True if endstops input polarity is inverted for
+  ///< this axis.
+  bool invert_axis;           ///< True if motions for this axis should be inverted
 
-        uint16_t eeprom_base;       ///< Base address to read EEPROM configuration from
+  uint16_t eeprom_base;       ///< Base address to read EEPROM configuration from
 
 public:
-	/// Set the direction for the stepper to move
-        /// \param[in] forward True to move the stepper forward, false otherwise.
-	void setDirection(bool forward);
+  /// Set the direction for the stepper to move
+  /// \param[in] forward True to move the stepper forward, false otherwise.
+  virtual void setDirection(bool forward);
 
-	/// Set the value of the step line
-        /// \param[in] value True to enable, false to disable. This should be toggled
-        ///                  back and fourth to effect stepping.
-	void step(bool value);
+  /// Set the value of the step line
+  /// \param[in] value True to enable, false to disable. This should be toggled
+  ///                  back and fourth to effect stepping.
+  virtual void step(bool value);
 
-        /// Enable or disable the stepper motor on this axis
-        /// \param[in] True to enable the motor
-	void setEnabled(bool enabled);
+  /// Enable or disable the stepper motor on this axis
+  /// \param[in] True to enable the motor
+  virtual void setEnabled(bool enabled);
 
-        /// Check if the maximum endstop has been triggered for this axis.
-        /// \return True if the axis has triggered its maximum endstop
-	bool isAtMaximum();
+  /// Check if the maximum endstop has been triggered for this axis.
+  /// \return True if the axis has triggered its maximum endstop
+  virtual bool isAtMaximum();
 
-        /// Check if the minimum endstop has been triggered for this axis.
-        /// \return True if the axis has triggered its minimum endstop
-	bool isAtMinimum();
+  /// Check if the minimum endstop has been triggered for this axis.
+  /// \return True if the axis has triggered its minimum endstop
+  virtual bool isAtMinimum();
 };
 
 #endif // STEPPERINTERFACE_HH_
