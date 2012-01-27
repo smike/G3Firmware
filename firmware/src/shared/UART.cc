@@ -43,261 +43,267 @@ volatile uint8_t loopback_bytes = 0;
     || defined (__AVR_ATmega1280__) \
     || defined (__AVR_ATmega2560__)
 #else
-    #error UART not implemented on this processor type!
+#error UART not implemented on this processor type!
 #endif
 
 #if defined (__AVR_ATmega168__) \
     || defined (__AVR_ATmega328__) \
     || defined (__AVR_ATmega328P__)
 
-    #define UBRR_VALUE 25
-    #define UCSR0A_VALUE 0
+#define UBRR_VALUE 25
+#define UCSR0A_VALUE 0
 
-    #define INIT_SERIAL(uart_) \
+#define INIT_SERIAL(uart_) \
     { \
-        UBRR0H = UBRR_VALUE >> 8; \
-        UBRR0L = UBRR_VALUE & 0xff; \
-        \
-        /* set config for uart, explicitly clear TX interrupt flag */ \
-        UCSR0A = UCSR0A_VALUE | _BV(TXC0); \
-        UCSR0B = _BV(RXEN0) | _BV(TXEN0); \
-        UCSR0C = _BV(UCSZ01)|_BV(UCSZ00); \
+  UBRR0H = UBRR_VALUE >> 8; \
+  UBRR0L = UBRR_VALUE & 0xff; \
+  \
+  /* set config for uart, explicitly clear TX interrupt flag */ \
+    UCSR0A = UCSR0A_VALUE | _BV(TXC0); \
+    UCSR0B = _BV(RXEN0) | _BV(TXEN0); \
+    UCSR0C = _BV(UCSZ01)|_BV(UCSZ00); \
     }
 
 #elif defined (__AVR_ATmega644P__)
 
-    #define UBRR_VALUE 25
-    #define UBRRA_VALUE 0
+#define UBRR_VALUE 25
+#define UBRRA_VALUE 0
 
-    // Adapted from ancient arduino/wiring rabbit hole
-    #define INIT_SERIAL(uart_) \
+// Adapted from ancient arduino/wiring rabbit hole
+#define INIT_SERIAL(uart_) \
     { \
-        UBRR##uart_##H = UBRR_VALUE >> 8; \
-        UBRR##uart_##L = UBRR_VALUE & 0xff; \
-        \
-        /* set config for uart_ */ \
-        UCSR##uart_##A = UBRRA_VALUE; \
-        UCSR##uart_##B = _BV(RXEN##uart_) | _BV(TXEN##uart_); \
-        UCSR##uart_##C = _BV(UCSZ##uart_##1)|_BV(UCSZ##uart_##0); \
+  UBRR##uart_##H = UBRR_VALUE >> 8; \
+  UBRR##uart_##L = UBRR_VALUE & 0xff; \
+  \
+  /* set config for uart_ */ \
+    UCSR##uart_##A = UBRRA_VALUE; \
+    UCSR##uart_##B = _BV(RXEN##uart_) | _BV(TXEN##uart_); \
+    UCSR##uart_##C = _BV(UCSZ##uart_##1)|_BV(UCSZ##uart_##0); \
     }
 
 #elif defined (__AVR_ATmega1280__) || defined (__AVR_ATmega2560__)
 
-    // Use double-speed mode for more accurate baud rate?
-    #define UBRR0_VALUE 16 // 115200 baud
-    #define UBRR1_VALUE 51 // 38400 baud
-    #define UCSRA_VALUE(uart_) _BV(U2X##uart_)
+// Use double-speed mode for more accurate baud rate?
+#define UBRR0_VALUE 16 // 115200 baud
+#define UBRR1_VALUE 51 // 38400 baud
+#define UCSRA_VALUE(uart_) _BV(U2X##uart_)
 
-    // Adapted from ancient arduino/wiring rabbit hole
-    #define INIT_SERIAL(uart_) \
+// Adapted from ancient arduino/wiring rabbit hole
+#define INIT_SERIAL(uart_) \
     { \
-        UBRR##uart_##H = UBRR##uart_##_VALUE >> 8; \
-        UBRR##uart_##L = UBRR##uart_##_VALUE & 0xff; \
-        \
-        /* set config for uart_ */ \
-        UCSR##uart_##A = UCSRA_VALUE(uart_); \
-        UCSR##uart_##B = _BV(RXEN##uart_) | _BV(TXEN##uart_); \
-        UCSR##uart_##C = _BV(UCSZ##uart_##1)|_BV(UCSZ##uart_##0); \
+  UBRR##uart_##H = UBRR##uart_##_VALUE >> 8; \
+  UBRR##uart_##L = UBRR##uart_##_VALUE & 0xff; \
+  \
+  /* set config for uart_ */ \
+    UCSR##uart_##A = UCSRA_VALUE(uart_); \
+    UCSR##uart_##B = _BV(RXEN##uart_) | _BV(TXEN##uart_); \
+    UCSR##uart_##C = _BV(UCSZ##uart_##1)|_BV(UCSZ##uart_##0); \
     }
 #endif
 
 #define ENABLE_SERIAL_INTERRUPTS(uart_) \
-{ \
-UCSR##uart_##B |= _BV(RXCIE##uart_) | _BV(TXCIE##uart_); \
-}
+    { \
+  UCSR##uart_##B |= _BV(RXCIE##uart_) | _BV(TXCIE##uart_); \
+    }
 
 #define DISABLE_SERIAL_INTERRUPTS(uart_) \
-{ \
-UCSR##uart_##B &= ~(_BV(RXCIE##uart_) | _BV(TXCIE##uart_)); \
-}
+    { \
+  UCSR##uart_##B &= ~(_BV(RXCIE##uart_) | _BV(TXCIE##uart_)); \
+    }
 
 // TODO: Move these definitions to the board files, where they belong.
 #if defined (__AVR_ATmega168__) \
     || defined (__AVR_ATmega328__) \
     || defined (__AVR_ATmega328P__)
 
-    UART UART::hostUART(0, RS485);
+UART UART::hostUART(0, RS232);
 
 #elif defined (__AVR_ATmega644P__) \
     || defined (__AVR_ATmega1280__) \
     || defined (__AVR_ATmega2560__)
 
-    UART UART::hostUART(0, RS232);
+UART UART::hostUART(0, RS232);
 
-    #if HAS_SLAVE_UART
-        UART UART::slaveUART(1, RS485);
-    #endif
+#if HAS_SLAVE_UART
+UART UART::slaveUART(1, RS485);
+#endif
 
 #endif
 
 
 void UART::init_serial() {
-    if(index_ == 0) {
-        INIT_SERIAL(0);
-    }
+  if(index_ == 0) {
+    INIT_SERIAL(0);
+  }
 #if HAS_SLAVE_UART
-    else {
-        INIT_SERIAL(1);
-    }
+  else {
+    INIT_SERIAL(1);
+  }
 #endif
 }
 
 void UART::send_byte(char data) {
-    if(index_ == 0) {
-        UDR0 = data;
-    }
+  if(index_ == 0) {
+    UDR0 = data;
+  }
 #if HAS_SLAVE_UART
-    else {
-        UDR1 = data;
-    }
+  else {
+    UDR1 = data;
+  }
 #endif
 }
 
 // Transition to a non-transmitting state. This is only used for RS485 mode.
 inline void listen() {
 #if defined(TX_ENABLE_PIN)
-    TX_ENABLE_PIN.setValue(false);
+  TX_ENABLE_PIN.setValue(false);
 #endif
 }
 
-// Transition to a transmitting state
+// Transition to a transmitting state. This is only used in RS485 mode.
 inline void speak() {
 #if defined(TX_ENABLE_PIN)
-    TX_ENABLE_PIN.setValue(true);
+  TX_ENABLE_PIN.setValue(true);
 #endif
 }
 
 UART::UART(uint8_t index, communication_mode mode) :
-    index_(index),
-    mode_(mode),
-    enabled_(false) {
-
-        init_serial();
-
+        index_(index),
+        mode_(mode),
+        enabled_(false) {
+  init_serial();
 }
 
 // Subsequent bytes will be triggered by the tx complete interrupt.
 void UART::beginSend() {
-        if (!enabled_) { return; }
+  if (!enabled_) { return; }
 
-        if (mode_ == RS485) {
-                speak();
-                _delay_us(10);
-                loopback_bytes = 1;
-        }
+  if (mode_ == RS485) {
+    speak();
+    _delay_us(10);
+    loopback_bytes = 1;
+  }
 
-        send_byte(out.getNextByteToSend());
+  send_byte(out.getNextByteToSend());
 }
 
 void UART::enable(bool enabled) {
-        enabled_ = enabled;
-        if (index_ == 0) {
-                if (enabled) { ENABLE_SERIAL_INTERRUPTS(0); }
-                else { DISABLE_SERIAL_INTERRUPTS(0); }
-        }
+  enabled_ = enabled;
+  if (index_ == 0) {
+    if (enabled) { ENABLE_SERIAL_INTERRUPTS(0); }
+    else { DISABLE_SERIAL_INTERRUPTS(0); }
+  }
 #if HAS_SLAVE_UART
-        else if (index_ == 1) {
-                if (enabled) { ENABLE_SERIAL_INTERRUPTS(1); }
-                else { DISABLE_SERIAL_INTERRUPTS(1); }
-        }
+  else if (index_ == 1) {
+    if (enabled) { ENABLE_SERIAL_INTERRUPTS(1); }
+    else { DISABLE_SERIAL_INTERRUPTS(1); }
+  }
 #endif
 
-        if (mode_ == RS485) {
+  if (mode_ == RS485) {
 #if defined(TX_ENABLE_PIN) && defined(RX_ENABLE_PIN)
-                // If this is an RS485 pin, set up the RX and TX enable control lines.
-                TX_ENABLE_PIN.setDirection(true);
-                RX_ENABLE_PIN.setDirection(true);
-                RX_ENABLE_PIN.setValue(false);  // Active low
+    // If this is an RS485 pin, set up the RX and TX enable control lines.
+    TX_ENABLE_PIN.setDirection(true);
+    RX_ENABLE_PIN.setDirection(true);
+    RX_ENABLE_PIN.setValue(false);  // Active low
 #endif
-                listen();
+    listen();
 
-                loopback_bytes = 0;
-        }
+    loopback_bytes = 0;
+  }
 }
 
 // Reset the UART to a listening state.  This is important for
 // RS485-based comms.
 void UART::reset() {
-        if (mode_ == RS485) {
-                loopback_bytes = 0;
-                listen();
-        }
+  if (mode_ == RS485) {
+    loopback_bytes = 0;
+    listen();
+  }
 }
 
 #if defined (__AVR_ATmega168__) \
     || defined (__AVR_ATmega328__) \
     || defined (__AVR_ATmega328P__)
 
-    // Send and receive interrupts
-    ISR(USART_RX_vect)
-    {
-            static uint8_t byte_in;
+// Send and receive interrupts
+ISR(USART_RX_vect)
+{
+  static uint8_t byte_in;
 
-            byte_in = UDR0;
-            if (loopback_bytes > 0) {
-                    loopback_bytes--;
-            } else {
-                    UART::getHostUART().in.processByte( byte_in );
+  byte_in = UDR0;
+  if (loopback_bytes > 0) {
+    loopback_bytes--;
+  } else {
+    UART::getHostUART().in.processByte( byte_in );
 
-                    // Workaround for buggy hardware: have slave hold line high.
-    #if ASSERT_LINE_FIX
-                    if (UART::getHostUART().in.isFinished()
-                            && (UART::getHostUART().in.read8(0)
-                            == ExtruderBoard::getBoard().getSlaveID())) {
-                        speak();
-                    }
-    #endif
-            }
+    // Workaround for buggy hardware: have slave hold line high.
+#if ASSERT_LINE_FIX
+    if (UART::getHostUART().in.isFinished()
+        && UART::getHostUART().in.read8(0) == ExtruderBoard::getBoard().getSlaveID()
+        && UART::getHostUART(),getMode() == RS485) {
+      speak();
     }
+#endif
+  }
+}
 
-    ISR(USART_TX_vect)
-    {
-            if (UART::getHostUART().out.isSending()) {
-                    loopback_bytes++;
-                    UDR0 = UART::getHostUART().out.getNextByteToSend();
-            } else {
-                    listen();
-            }
+ISR(USART_TX_vect)
+{
+  if (UART::getHostUART().out.isSending()) {
+    if (UART::getHostUART().getMode() == RS485) {
+      loopback_bytes++;
     }
+    UDR0 = UART::getHostUART().out.getNextByteToSend();
+  } else {
+    if (UART::getHostUART().getMode() == RS485) {
+      listen();
+    }
+  }
+}
 
 #elif defined (__AVR_ATmega644P__) || defined (__AVR_ATmega1280__) || defined (__AVR_ATmega2560__)
 
-    // Send and receive interrupts
-    ISR(USART0_RX_vect)
-    {
-            UART::getHostUART().in.processByte( UDR0 );
+// Send and receive interrupts
+ISR(USART0_RX_vect)
+{
+  UART::getHostUART().in.processByte( UDR0 );
+}
+
+ISR(USART0_TX_vect)
+{
+  if (UART::getHostUART().out.isSending()) {
+    UDR0 = UART::getHostUART().out.getNextByteToSend();
+  }
+}
+
+#if HAS_SLAVE_UART
+ISR(USART1_RX_vect)
+{
+  static uint8_t byte_in;
+
+  byte_in = UDR1;
+  if (loopback_bytes > 0) {
+    loopback_bytes--;
+  } else {
+    UART::getSlaveUART().in.processByte( byte_in );
+  }
+}
+
+ISR(USART1_TX_vect)
+{
+  if (UART::getSlaveUART().out.isSending()) {
+    if (UART::getSlaveUART().getMode() == RS485) {
+      loopback_bytes++;
     }
-
-    ISR(USART0_TX_vect)
-    {
-            if (UART::getHostUART().out.isSending()) {
-                    UDR0 = UART::getHostUART().out.getNextByteToSend();
-            }
+    UDR1 = UART::getSlaveUART().out.getNextByteToSend();
+  } else {
+    _delay_us(10);
+    if (UART::getSlaveUART().getMode() == RS485) {
+      listen();
     }
-
-    #if HAS_SLAVE_UART
-        ISR(USART1_RX_vect)
-        {
-                static uint8_t byte_in;
-
-                byte_in = UDR1;
-                if (loopback_bytes > 0) {
-                        loopback_bytes--;
-                } else {
-                        UART::getSlaveUART().in.processByte( byte_in );
-                }
-        }
-
-        ISR(USART1_TX_vect)
-        {
-                if (UART::getSlaveUART().out.isSending()) {
-                        loopback_bytes++;
-                        UDR1 = UART::getSlaveUART().out.getNextByteToSend();
-                } else {
-                        _delay_us(10);
-                        listen();
-                }
-        }
-    #endif
+  }
+}
+#endif
 
 #endif
