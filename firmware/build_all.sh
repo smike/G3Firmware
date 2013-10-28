@@ -2,7 +2,7 @@
 
 SCONS=SConstruct
 
-PLATFORMS=( rrmbv12 mb24 mb24-2560 ecv22 ecv34 )
+PLATFORMS=( rrmbv12 mb24 mb24-2560 ecv22 ecv34 uno )
 
 LOG_FILE=build_all_output
 
@@ -24,7 +24,7 @@ function build_firmware {
     if [ "$?" -ne "0" ]; then
         echo Failure
     else
-	echo Success
+  echo Success
     fi
 done
 
@@ -38,11 +38,11 @@ function build_documentation {
     echo Building documentation >> ${LOG_FILE}
     echo -e "\n\n\n\n" >> ${LOG_FILE}
     doxygen G3Firmware.doxyfile >> ${LOG_FILE} 2>&1
-    
+
     if [ "$?" -ne "0" ]; then
         echo Failure
     else
-	echo Success
+  echo Success
     fi
 }
 

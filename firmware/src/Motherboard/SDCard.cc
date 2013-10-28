@@ -16,7 +16,9 @@
  */
 
 #include "SDCard.hh"
+#include "Configuration.hh"
 
+#if defined(HAS_SD) && HAS_SD == 1
 #include <avr/io.h>
 #include <string.h>
 #include "lib_sd/sd-reader_config.h"
@@ -81,29 +83,29 @@ bool openRoot()
 }
 
 SdErrorCode initCard() {
-	if (!sd_raw_init()) {
-		if (!sd_raw_available()) {
-			reset();
-			return SD_ERR_NO_CARD_PRESENT;
-		} else {
-			reset();
-			return SD_ERR_INIT_FAILED;
-		}
-	} else if (!openPartition()) {
-		reset();
-		return SD_ERR_PARTITION_READ;
-	} else if (!openFilesys()) {
-		reset();
-		return SD_ERR_OPEN_FILESYSTEM;
-	} else if (!openRoot()) {
-		reset();
-		return SD_ERR_NO_ROOT;
-		
-	/* we need to keep locked as the last check */
-	} else if (sd_raw_locked()) {
-		return SD_ERR_CARD_LOCKED;
-	}
-	return SD_SUCCESS;
+  if (!sd_raw_init()) {
+    if (!sd_raw_available()) {
+      reset();
+      return SD_ERR_NO_CARD_PRESENT;
+    } else {
+      reset();
+      return SD_ERR_INIT_FAILED;
+    }
+  } else if (!openPartition()) {
+    reset();
+    return SD_ERR_PARTITION_READ;
+  } else if (!openFilesys()) {
+    reset();
+    return SD_ERR_OPEN_FILESYSTEM;
+  } else if (!openRoot()) {
+    reset();
+    return SD_ERR_NO_ROOT;
+
+  /* we need to keep locked as the last check */
+  } else if (sd_raw_locked()) {
+    return SD_ERR_CARD_LOCKED;
+  }
+  return SD_SUCCESS;
 }
 
 SdErrorCode directoryReset() {
@@ -117,32 +119,32 @@ SdErrorCode directoryReset() {
 }
 
 SdErrorCode directoryNextEntry(char* buffer, uint8_t bufsize) {
-	struct fat_dir_entry_struct entry;
-	// This is a bit of a hack.  For whatever reason, some filesystems return
-	// files with nulls as the first character of their name.  This isn't
-	// necessarily broken in of itself, but a null name is also our way
-	// of signalling we've gone through the directory, so we discard these
-	// entries.  We have an upper limit on the number of entries to cycle
-	// through, so we don't potentially lock up here.
-	uint8_t tries = 5;
-	while (tries) {
-		if (fat_read_dir(dd, &entry)) {
-			int i;
-			for (i = 0; (i < bufsize-1) && entry.long_name[i] != 0; i++) {
-				buffer[i] = entry.long_name[i];
-			}
-			buffer[i] = 0;
-			if (i > 0) {
-				break;
-			} else {
-				tries--;
-			}
-		} else {
-			buffer[0] = 0;
-			break;
-		}
-	}
-	return SD_SUCCESS;
+  struct fat_dir_entry_struct entry;
+  // This is a bit of a hack.  For whatever reason, some filesystems return
+  // files with nulls as the first character of their name.  This isn't
+  // necessarily broken in of itself, but a null name is also our way
+  // of signalling we've gone through the directory, so we discard these
+  // entries.  We have an upper limit on the number of entries to cycle
+  // through, so we don't potentially lock up here.
+  uint8_t tries = 5;
+  while (tries) {
+    if (fat_read_dir(dd, &entry)) {
+      int i;
+      for (i = 0; (i < bufsize-1) && entry.long_name[i] != 0; i++) {
+        buffer[i] = entry.long_name[i];
+      }
+      buffer[i] = 0;
+      if (i > 0) {
+        break;
+      } else {
+        tries--;
+      }
+    } else {
+      buffer[0] = 0;
+      break;
+    }
+  }
+  return SD_SUCCESS;
 }
 
 bool findFileInDir(const char* name, struct fat_dir_entry_struct* dir_entry)
@@ -192,11 +194,11 @@ bool playing = false;
 uint32_t capturedBytes = 0L;
 
 bool isPlaying() {
-	return playing;
+  return playing;
 }
 
 bool isCapturing() {
-	return capturing;
+  return capturing;
 }
 
 SdErrorCode startCapture(char* filename)
@@ -227,11 +229,11 @@ SdErrorCode startCapture(char* filename)
 
 void capturePacket(const Packet& packet)
 {
-	if (file == 0) return;
-	// Casting away volatile is OK in this instance; we know where the
-	// data is located and that fat_write_file isn't caching
-	fat_write_file(file, (uint8_t*)packet.getData(), packet.getLength());
-	capturedBytes += packet.getLength();
+  if (file == 0) return;
+  // Casting away volatile is OK in this instance; we know where the
+  // data is located and that fat_write_file isn't caching
+  fat_write_file(file, (uint8_t*)packet.getData(), packet.getLength());
+  capturedBytes += packet.getLength();
 }
 
 
@@ -239,8 +241,8 @@ uint32_t finishCapture()
 {
   if (capturing) {
     if (file != 0) {
-    	fat_close_file(file);
-    	sd_raw_sync();
+      fat_close_file(file);
+      sd_raw_sync();
     }
     file = 0;
     capturing = false;
@@ -292,30 +294,32 @@ void playbackRewind(uint8_t bytes) {
 void finishPlayback() {
   playing = false;
   if (file != 0) {
-	  fat_close_file(file);
-	  sd_raw_sync();
+    fat_close_file(file);
+    sd_raw_sync();
   }
   file = 0;
 }
 
 
 void reset() {
-	if (playing)
-		finishPlayback();
-	if (capturing)
-		finishCapture();
-	if (dd != 0) {
-		fat_close_dir(dd);
-		dd = 0;
-	}
-	if (fs != 0) {
-		fat_close(fs);
-		fs = 0;
-	}
-	if (partition != 0) {
-		partition_close(partition);
-		partition = 0;
-	}
+  if (playing)
+    finishPlayback();
+  if (capturing)
+    finishCapture();
+  if (dd != 0) {
+    fat_close_dir(dd);
+    dd = 0;
+  }
+  if (fs != 0) {
+    fat_close(fs);
+    fs = 0;
+  }
+  if (partition != 0) {
+    partition_close(partition);
+    partition = 0;
+  }
 }
 
 } // namespace sdcard
+
+#endif

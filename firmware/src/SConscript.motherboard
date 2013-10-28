@@ -1,5 +1,5 @@
 #
-# Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+# Copyright 2010 by Adam Mayer   <adam@makerbot.com>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -53,8 +53,8 @@ def parse_version(v):
     return int(v)
 
 def get_default_version():
-	regex = re.compile(r"const uint16_t firmware_version = ([0-9]+);")
-	return parse_version(f.get_contents().strip())
+  regex = re.compile(r"const uint16_t firmware_version = ([0-9]+);")
+  return parse_version(f.get_contents().strip())
 
 vstr = File('#/current_version.txt').get_contents().strip()
 
@@ -64,76 +64,106 @@ version = parse_version(vstr)
 
 target_name = "MB-"+platform+"-v"+str(version//100)+"."+str(version%100)
 
+extra_srcs = []
+extra_include_paths = []
+
 if (platform == 'rrmbv12'):
-	default_baud = '38400'
-	default_programmer = 'stk500v1'
-	mcu='atmega644p'
-	has_queue = 1
-	has_psu = 1
+  default_baud = '38400'
+  default_programmer = 'stk500v1'
+  mcu='atmega644p'
+  has_queue = 1
+  has_psu = 1
+  has_sd = 1
 elif (platform == 'mb24'):
-	default_baud = '57600'
-	default_programmer = 'stk500v1'
-	mcu='atmega1280'
-	has_queue = 1
-	has_psu = 0
+  default_baud = '57600'
+  default_programmer = 'stk500v1'
+  mcu='atmega1280'
+  has_queue = 1
+  has_psu = 0
+  has_sd = 1
 elif (platform == 'mb24-2560'):
-	platform = 'mb24'
-	default_baud = '115200'
-	default_programmer = 'stk500v2'
-	mcu='atmega2560'
-	has_queue = 1
-	has_psu = 0
+  platform = 'mb24'
+  default_baud = '115200'
+  default_programmer = 'stk500v2'
+  mcu='atmega2560'
+  has_queue = 1
+  has_psu = 0
+  has_sd = 1
+elif (platform == 'uno'):
+  platform = 'uno'
+  default_baud = '115200'
+  default_programmer = 'stk500v1'
+  mcu='atmega328p'
+  has_queue = 1
+  has_psu = 0
+  has_sd = 0
+  extra_srcs = (Glob('Arduino/libraries/Stepper/*.cpp') +
+                Glob('Arduino/libraries/Stepper/utility/*.cpp') +
+                #Glob('Arduino/hardware/arduino/cores/arduino/*.cpp') +
+                Glob('Arduino/hardware/arduino/cores/arduino/*.c') +
+                #Glob('Arduino/hardware/arduino/variants/standard/*.cpp')
+                [])
+  extra_include_paths = [
+    'Arduino/libraries/Stepper',
+    'Arduino/libraries/Stepper/utility',
+    'Arduino/hardware/arduino/cores/arduino',
+    'Arduino/hardware/arduino/variants/standard'
+  ]
 else:
-	print "Platform "+platform+" is not currently supported. Supported platforms are:"
-	print "rrmbv12: Gen 3 motherboard"
-	print "mb24: Gen4 motherboard"
-	print "mb24-2560: Gen4 motherboard with Mega 2560"
-	exit()
+  print "Platform "+platform+" is not currently supported. Supported platforms are:"
+  print "rrmbv12: Gen 3 motherboard"
+  print "mb24: Gen4 motherboard"
+  print "mb24-2560: Gen4 motherboard with Mega 2560"
+  exit()
 
 
 upload_port = ARGUMENTS.get('port','/dev/ttyUSB0')
 upload_baud = ARGUMENTS.get('baud',default_baud)
 upload_prog = ARGUMENTS.get('programmer',default_programmer)
 
-srcs = Glob('*.cc') + Glob('Motherboard/*.cc') + Glob('Motherboard/lib_sd/*.c') + Glob('Motherboard/boards/%s/*.cc' % platform) + Glob('shared/*.cc')
+srcs = Glob('*.cc') + Glob('Motherboard/*.cc') + Glob('Motherboard/boards/%s/*.cc' % platform) + Glob('shared/*.cc')
+if has_sd:
+  srcs += Glob('Motherboard/lib_sd/*.c')
+srcs += extra_srcs
 
 include_paths = ['shared', 'Motherboard','Motherboard/boards/%s' % platform, '.']
+include_paths += extra_include_paths
 
 flags=[
-	'-DF_CPU='+str(f_cpu),
-	'-DVERSION='+str(version),
-	'-mmcu='+mcu,
-	'-g',
-	'-Os',
-	'-w',
-	'-fno-exceptions',
-	'-ffunction-sections',
-	'-fdata-sections']
+  '-DF_CPU='+str(f_cpu),
+  '-DVERSION='+str(version),
+  '-mmcu='+mcu,
+  '-g',
+  '-Os',
+  '-w',
+  '-fno-exceptions',
+  '-ffunction-sections',
+  '-fdata-sections']
 
 if (os.environ.has_key('BUILD_NAME')):
    flags.append('-DBUILD_NAME=' + os.environ['BUILD_NAME'])
 
 if (os.environ.has_key('AVR_TOOLS_PATH')):
-	avr_tools_path = os.environ['AVR_TOOLS_PATH']
+  avr_tools_path = os.environ['AVR_TOOLS_PATH']
 elif (os.environ.has_key('AVR32_HOME')):
-	avr_tools_path = os.environ['AVR32_HOME'] + '\\bin'
+  avr_tools_path = os.environ['AVR32_HOME'] + '\\bin'
 else:
-	lines = os.popen('/usr/bin/which avr-gcc').readlines()
-	if(len(lines) > 0):
-		avr_tools_path = dirname(lines[0])
-	else: 
-		print "which gcc failed. avr-gcc path not autodetected"
-		print "set AVR32_HOME or update 'which' and avr-gcc"
-		exit()
+  lines = os.popen('/usr/bin/which avr-gcc').readlines()
+  if(len(lines) > 0):
+    avr_tools_path = dirname(lines[0])
+  else:
+    print "which gcc failed. avr-gcc path not autodetected"
+    print "set AVR32_HOME or update 'which' and avr-gcc"
+    exit()
 
 if (fived == 'true'):
-	flags.append('-DFOURTH_STEPPER=1')
+  flags.append('-DFOURTH_STEPPER=1')
 
 env=Environment(tools=['g++', 'gcc'],
         CC=avr_tools_path+"/avr-g++",
-	CXX=avr_tools_path+"/avr-g++",
-	CPPPATH=include_paths,
-	CCFLAGS=flags)
+  CXX=avr_tools_path+"/avr-g++",
+  CPPPATH=include_paths,
+  CCFLAGS=flags)
 objs = env.Object(srcs)
 
 # run_alias = Alias('run', [program], program[0].path)
@@ -145,7 +175,7 @@ map_name = target_name + '.map'
 
 env.Append(BUILDERS={'Elf':Builder(action=avr_tools_path+"/avr-gcc -mmcu="+mcu+" -Os -Wl,--gc-sections -Wl,-Map,"+map_name+" -o $TARGET $SOURCES")})
 env.Append(BUILDERS={'Hex':Builder(action=avr_tools_path+"/avr-objcopy -O ihex -R .eeprom $SOURCES $TARGET")})
-env.Elf(elf_name, objs) 
+env.Elf(elf_name, objs)
 env.Hex(hex_name, elf_name)
 
 avrdude = avr_tools_path+"/avrdude"

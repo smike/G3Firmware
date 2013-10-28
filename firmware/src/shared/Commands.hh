@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+ * Copyright 2010 by Adam Mayer   <adam@makerbot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -105,8 +105,6 @@
 #define HOST_CMD_STORE_HOME_POSITION  143
 #define HOST_CMD_RECALL_HOME_POSITION 144
 
-#define HOST_CMD_DEBUG_ECHO        0x70
-
 // These are our query commands from the host
 #define SLAVE_CMD_VERSION                0
 #define SLAVE_CMD_INIT                   1
@@ -135,7 +133,7 @@
 #define SLAVE_CMD_ABORT                 24
 #define SLAVE_CMD_READ_FROM_EEPROM      25
 #define SLAVE_CMD_WRITE_TO_EEPROM       26
-#define SLAVE_CMD_TOGGLE_ABP			27
+#define SLAVE_CMD_TOGGLE_ABP      27
 
 #define SLAVE_CMD_GET_PLATFORM_TEMP     30
 #define SLAVE_CMD_SET_PLATFORM_TEMP     31

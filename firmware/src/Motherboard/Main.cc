@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 by Adam Mayer	 <adam@makerbot.com>
+ * Copyright 2010 by Adam Mayer   <adam@makerbot.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -30,45 +30,53 @@
 #include "EepromMap.hh"
 
 void reset(bool hard_reset) {
-	ATOMIC_BLOCK(ATOMIC_FORCEON) {
-		Motherboard& board = Motherboard::getBoard();
-		sdcard::reset();
-		steppers::abort();
-		command::reset();
-		eeprom::init();
-		board.reset();
-		sei();
-		// If we've just come from a hard reset, wait for 2.5 seconds before
-		// trying to ping an extruder.  This gives the extruder time to boot
-		// before we send it a packet.
-		if (hard_reset) {
-			Timeout t;
-			t.start(1000L*2500L); // wait for 2500 ms
-			while (!t.hasElapsed());
-			tool::test(); // Run test
-		}
-		if (!tool::reset())
-		{
-			// Fail, but let it go; toggling the PSU is dangerous.
-		}
-	}
+  ATOMIC_BLOCK(ATOMIC_FORCEON) {
+    Motherboard& board = Motherboard::getBoard();
+#if defined(HAS_SD) && HAS_SD == 1
+    sdcard::reset();
+#endif
+    steppers::abort();
+    command::reset();
+    eeprom::init();
+    board.reset();
+    sei();
+    // If we've just come from a hard reset, wait for 2.5 seconds before
+    // trying to ping an extruder.  This gives the extruder time to boot
+    // before we send it a packet.
+    if (hard_reset) {
+      Timeout t;
+      t.start(1000L*2500L); // wait for 2500 ms
+      while (!t.hasElapsed());
+#if defined(HAS_SLAVE_UART) && (HAS_SLAVE_UART == 1)
+      tool::test(); // Run test
+#endif
+    }
+#if defined(HAS_SLAVE_UART) && (HAS_SLAVE_UART == 1)
+    if (!tool::reset()) {
+      // Fail, but let it go; toggling the PSU is dangerous.
+    }
+#endif
+  }
 }
 
 int main() {
 
-	Motherboard& board = Motherboard::getBoard();
-	steppers::init(Motherboard::getBoard());
-	reset(true);
-	sei();
-	while (1) {
-		// Toolhead interaction thread.
-		tool::runToolSlice();
-		// Host interaction thread.
-		host::runHostSlice();
-		// Command handling thread.
-		command::runCommandSlice();
-		// Motherboard slice
-		board.runMotherboardSlice();
-	}
-	return 0;
+  Motherboard& board = Motherboard::getBoard();
+  steppers::init(Motherboard::getBoard());
+  reset(true);
+  sei();
+  while (1) {
+// Only makes sense to run the tool slice if we can communicate with the tool.
+#if defined(HAS_SLAVE_UART) && (HAS_SLAVE_UART == 1)
+    // Toolhead interaction thread.
+    tool::runToolSlice();
+#endif
+    // Host interaction thread.
+    host::runHostSlice();
+    // Command handling thread.
+    command::runCommandSlice();
+    // Motherboard slice
+    board.runMotherboardSlice();
+  }
+  return 0;
 }
